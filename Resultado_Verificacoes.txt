@@ -1,0 +1,12 @@
+Verificações independentes de estrutura e lógica do código.
+Não representam a execução da suíte Vitest nem testes do sistema no navegador.
+
+PASSOU: 8 arquiteturas presentes
+PASSOU: 6 explicações de métricas alinhadas aos rótulos
+PASSOU: quiz sem respostas devolve 8 resultados sem NaN
+PASSOU: quiz com respostas retorna percentuais finitos de 0 a 100
+PASSOU: comparador apresenta nota didática e guia das métricas
+PASSOU: ranking do quiz informa significado relativo dos percentuais
+PASSOU: simulação possui layout responsivo
+PASSOU: TSX alterado sem erros sintáticos na transpilação isolada
+RESULTADO: 8 verificações independentes passaram.

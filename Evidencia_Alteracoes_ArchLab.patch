@@ -1,0 +1,116 @@
+--- ArchLab original/data/architectures.ts
++++ ArchLab revisado/data/architectures.ts
+@@ -155,3 +155,14 @@
+   velocidade: 'Velocidade dev',
+   maturidade: 'Maturidade',
+ }
++
++// Guia explicativo para interpretação das notas comparativas.
++// As notas são exemplos didáticos, não medições reais de desempenho.
++export const METRIC_GUIDE: Record<string, string> = {
++  escalabilidade: 'Capacidade relativa de crescer conforme a demanda.',
++  complexidade: 'Esforço relativo para desenvolver e manter; maior significa mais complexo.',
++  custo: 'Custo relativo estimado; maior significa mais caro.',
++  resiliencia: 'Capacidade relativa de lidar com falhas.',
++  velocidade: 'Facilidade relativa para entregar mudanças rapidamente.',
++  maturidade: 'Grau relativo de adoção, ferramentas e documentação.',
++}
+--- ArchLab original/pages/ComparatorPage.tsx
++++ ArchLab revisado/pages/ComparatorPage.tsx
+@@ -1,5 +1,5 @@
+ import { useState } from 'react'
+-import { ARCHITECTURES, METRIC_LABELS } from '@/data/architectures'
++import { ARCHITECTURES, METRIC_LABELS, METRIC_GUIDE } from '@/data/architectures'
+ import { RadarChart } from '@/components/ui/RadarChart'
+ import { useReveal } from '@/hooks/useReveal'
+ import type { Architecture } from '@/types'
+@@ -65,6 +65,9 @@
+         <p className="font-mono text-[0.7rem] leading-[1.95] max-w-[420px] mx-auto mt-4" style={{ color: 'var(--color-dim2)' }}>
+           Escolha duas arquiteturas e veja como se comportam em diferentes dimensões.
+         </p>
++        <p className="font-mono text-[0.62rem] leading-[1.7] max-w-[550px] mx-auto mt-3" style={{ color: 'var(--color-dim2)' }}>
++            As notas de 1 a 5 são ilustrativas. Em <strong>custo</strong> e <strong>complexidade</strong>, uma nota maior significa maior custo ou esforço — não necessariamente uma vantagem.
++        </p>
+       </div>
+ 
+       <div ref={uiRef} className="reveal"
+@@ -108,6 +111,9 @@
+                       <span className="font-mono text-[0.58rem]" style={{ color: archB.color }}>{vb}/5</span>
+                     </div>
+                   </div>
++                  <p className="font-mono text-[0.55rem] leading-[1.5] mb-1" style={{ color: 'var(--color-dim)' }}>
++                    {METRIC_GUIDE[key]}
++                  </p>
+                   {[{ arch: archA, val: va }, { arch: archB, val: vb }].map(({ arch, val }) => (
+                     <div key={arch.id} className="mb-1">
+                       <div className="font-mono text-[0.5rem] uppercase tracking-[0.08em] mb-[2px]" style={{ color: 'var(--color-dim)' }}>{arch.name}</div>
+--- ArchLab original/data/quiz.ts
++++ ArchLab revisado/data/quiz.ts
+@@ -122,6 +122,6 @@
+ 
+   const maxScore = Math.max(...Object.values(scores))
+   return Object.entries(scores)
+-    .map(([archId, score]) => ({ archId, score, pct: Math.round((score / maxScore) * 100) }))
++    .map(([archId, score]) => ({ archId, score, pct: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0 }))
+     .sort((a, b) => b.score - a.score)
+ }
+--- ArchLab original/pages/QuizPage.tsx
++++ ArchLab revisado/pages/QuizPage.tsx
+@@ -177,6 +177,9 @@
+         <div className="font-mono text-[0.6rem] tracking-[0.3em] uppercase mb-6" style={{ color: 'var(--color-arch-gold)' }}>
+           // Ranking completo
+         </div>
++        <p className="font-mono text-[0.62rem] leading-[1.7] mb-5" style={{ color: 'var(--color-dim2)' }}>
++          As porcentagens indicam pontuações relativas à opção mais bem classificada — não são probabilidade de acerto nem substituem uma avaliação técnica.
++        </p>
+         <div className="flex flex-col gap-3">
+           {results.map((res, i) => {
+             const arch = ARCHITECTURES.find(a => a.id === res.archId)
+--- ArchLab original/components/simulation/SimulationPanel.tsx
++++ ArchLab revisado/components/simulation/SimulationPanel.tsx
+@@ -101,7 +101,7 @@
+   const healthColor = metrics.health > 80 ? '#a5d6a7' : metrics.health > 50 ? '#ffb74d' : '#ef5350'
+ 
+   return (
+-    <div className="grid gap-6" style={{ gridTemplateColumns:'1fr 360px' }}>
++    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+       <div className="flex flex-col gap-4">
+         <div style={{ border:'1px solid rgba(244,143,177,0.12)', backdropFilter:'blur(12px)' }}>
+           <SimulationCanvas ref={canvasRef} nodes={SIM_NODES} />
+--- ArchLab original/test/architectures.test.ts
++++ ArchLab revisado/test/architectures.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, it, expect } from 'vitest'
+-import { ARCHITECTURES, METRIC_LABELS } from '@/data/architectures'
++import { ARCHITECTURES, METRIC_LABELS, METRIC_GUIDE } from '@/data/architectures'
+ 
+ describe('Architecture data', () => {
+   it('should have 8 architectures', () => {
+@@ -39,3 +39,12 @@
+     expect(Object.keys(METRIC_LABELS)).toHaveLength(6)
+   })
+ })
++
++
++describe('Metric explanations', () => {
++  it('every comparative metric has an explanation', () => {
++    Object.keys(METRIC_LABELS).forEach(key => {
++      expect(METRIC_GUIDE[key]?.trim().length).toBeGreaterThan(0)
++    })
++  })
++})
+--- ArchLab original/test/components.test.tsx
++++ ArchLab revisado/test/components.test.tsx
+@@ -214,3 +214,12 @@
+     })
+   })
+ })
++
++// Incremento de validação: entradas incompletas não devem gerar NaN.
++describe('Quiz defensive validation', () => {
++  it('returns zero percentages when there are no answers', () => {
++    const results = calculateResults({})
++    expect(results).toHaveLength(8)
++    expect(results.every(r => r.pct === 0 && Number.isFinite(r.pct))).toBe(true)
++  })
++})
